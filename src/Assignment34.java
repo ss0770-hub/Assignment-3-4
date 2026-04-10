@@ -1,75 +1,47 @@
-import java.util.Arrays;
-
 public class Assignment34 {
 
-    // ---------- RESULT HOLDER ----------
     static class Result {
-        int firstIndex = -1;
-        int lastIndex = -1;
-        int foundIndex = -1;
-        int comparisons = 0;
-        int count = 0;
+        int linearComparisons = 0;
+        int binaryComparisons = 0;
+        Integer floor = null;
+        Integer ceiling = null;
     }
 
     // ---------- LINEAR SEARCH ----------
-    public static Result linearSearch(String[] logs, String target) {
-        Result res = new Result();
+    public static Result linearSearch(int[] risks, int target, Result res) {
+        for (int i = 0; i < risks.length; i++) {
+            res.linearComparisons++;
 
-        for (int i = 0; i < logs.length; i++) {
-            res.comparisons++;
-
-            if (logs[i].equals(target)) {
-                if (res.firstIndex == -1) {
-                    res.firstIndex = i;
-                }
-                res.lastIndex = i;
+            if (risks[i] == target) {
+                return res; // exact match found
             }
         }
-        return res;
+        return res; // not found
     }
 
-    // ---------- BINARY SEARCH + DUPLICATES ----------
-    public static Result binarySearch(String[] logs, String target) {
-        Result res = new Result();
+    // ---------- BINARY SEARCH FOR FLOOR & CEILING ----------
+    public static Result binaryFloorCeiling(int[] risks, int target, Result res) {
 
-        int low = 0, high = logs.length - 1;
+        int low = 0, high = risks.length - 1;
 
-        // Step 1: standard binary search (find one occurrence)
         while (low <= high) {
             int mid = (low + high) / 2;
-            res.comparisons++;
+            res.binaryComparisons++;
 
-            int cmp = logs[mid].compareTo(target);
+            if (risks[mid] == target) {
+                res.floor = risks[mid];
+                res.ceiling = risks[mid];
+                return res;
+            }
 
-            if (cmp == 0) {
-                res.foundIndex = mid;
-                break;
-            } else if (cmp < 0) {
+            if (risks[mid] < target) {
+                res.floor = risks[mid]; // best so far <= target
                 low = mid + 1;
             } else {
+                res.ceiling = risks[mid]; // best so far >= target
                 high = mid - 1;
             }
         }
-
-        if (res.foundIndex == -1) return res;
-
-        // Step 2: find first occurrence (left scan)
-        int i = res.foundIndex;
-        while (i >= 0 && logs[i].equals(target)) {
-            res.comparisons++;
-            i--;
-        }
-        res.firstIndex = i + 1;
-
-        // Step 3: find last occurrence (right scan)
-        i = res.foundIndex;
-        while (i < logs.length && logs[i].equals(target)) {
-            res.comparisons++;
-            i++;
-        }
-        res.lastIndex = i - 1;
-
-        res.count = res.lastIndex - res.firstIndex + 1;
 
         return res;
     }
@@ -77,26 +49,26 @@ public class Assignment34 {
     // ---------- MAIN ----------
     public static void main(String[] args) {
 
-        String[] logs = {"accB", "accA", "accB", "accC"};
+        int[] risks = {10, 25, 50, 100};
+        int target = 30;
 
-        String target = "accB";
+        Result res = new Result();
 
-        // ---- Linear Search ----
-        Result linear = linearSearch(logs, target);
+        // Linear Search
+        linearSearch(risks, target, res);
+
         System.out.println("LINEAR SEARCH:");
-        System.out.println("First Index: " + linear.firstIndex);
-        System.out.println("Last Index: " + linear.lastIndex);
-        System.out.println("Comparisons: " + linear.comparisons);
+        System.out.println("Target: " + target);
+        System.out.println("Comparisons: " + res.linearComparisons);
+        System.out.println("Result: NOT FOUND");
         System.out.println();
 
-        // ---- Binary Search (requires sorted input) ----
-        Arrays.sort(logs);
+        // Binary Search (Floor & Ceiling)
+        binaryFloorCeiling(risks, target, res);
 
-        Result binary = binarySearch(logs, target);
-        System.out.println("BINARY SEARCH:");
-        System.out.println("First Index: " + binary.firstIndex);
-        System.out.println("Last Index: " + binary.lastIndex);
-        System.out.println("Count: " + binary.count);
-        System.out.println("Comparisons: " + binary.comparisons);
+        System.out.println("BINARY SEARCH (FLOOR & CEILING):");
+        System.out.println("Floor (<= target): " + res.floor);
+        System.out.println("Ceiling (>= target): " + res.ceiling);
+        System.out.println("Comparisons: " + res.binaryComparisons);
     }
 }

@@ -1,155 +1,102 @@
-import java.util.*;
-
-class Asset {
-    String name;
-    double returnRate;
-    double volatility;
-
-    Asset(String name, double returnRate, double volatility) {
-        this.name = name;
-        this.returnRate = returnRate;
-        this.volatility = volatility;
-    }
-
-    @Override
-    public String toString() {
-        return name + ":" + returnRate + "% (Vol:" + volatility + ")";
-    }
-}
+import java.util.Arrays;
 
 public class Assignment34 {
 
-    // 🔵 Merge Sort (Stable, Ascending by returnRate)
-    public static void mergeSort(Asset[] arr, int left, int right) {
-        if (left < right) {
-            int mid = (left + right) / 2;
-
-            mergeSort(arr, left, mid);
-            mergeSort(arr, mid + 1, right);
-
-            merge(arr, left, mid, right);
-        }
+    // ---------- RESULT HOLDER ----------
+    static class Result {
+        int firstIndex = -1;
+        int lastIndex = -1;
+        int foundIndex = -1;
+        int comparisons = 0;
+        int count = 0;
     }
 
-    private static void merge(Asset[] arr, int left, int mid, int right) {
-        Asset[] temp = new Asset[right - left + 1];
+    // ---------- LINEAR SEARCH ----------
+    public static Result linearSearch(String[] logs, String target) {
+        Result res = new Result();
 
-        int i = left, j = mid + 1, k = 0;
+        for (int i = 0; i < logs.length; i++) {
+            res.comparisons++;
 
-        while (i <= mid && j <= right) {
-            // ✅ Stable: <= preserves order
-            if (arr[i].returnRate <= arr[j].returnRate) {
-                temp[k++] = arr[i++];
+            if (logs[i].equals(target)) {
+                if (res.firstIndex == -1) {
+                    res.firstIndex = i;
+                }
+                res.lastIndex = i;
+            }
+        }
+        return res;
+    }
+
+    // ---------- BINARY SEARCH + DUPLICATES ----------
+    public static Result binarySearch(String[] logs, String target) {
+        Result res = new Result();
+
+        int low = 0, high = logs.length - 1;
+
+        // Step 1: standard binary search (find one occurrence)
+        while (low <= high) {
+            int mid = (low + high) / 2;
+            res.comparisons++;
+
+            int cmp = logs[mid].compareTo(target);
+
+            if (cmp == 0) {
+                res.foundIndex = mid;
+                break;
+            } else if (cmp < 0) {
+                low = mid + 1;
             } else {
-                temp[k++] = arr[j++];
+                high = mid - 1;
             }
         }
 
-        while (i <= mid) temp[k++] = arr[i++];
-        while (j <= right) temp[k++] = arr[j++];
+        if (res.foundIndex == -1) return res;
 
-        for (int x = 0; x < temp.length; x++) {
-            arr[left + x] = temp[x];
+        // Step 2: find first occurrence (left scan)
+        int i = res.foundIndex;
+        while (i >= 0 && logs[i].equals(target)) {
+            res.comparisons++;
+            i--;
         }
-    }
+        res.firstIndex = i + 1;
 
-    // 🟢 Quick Sort (Descending by returnRate, tie → lower volatility first)
-    public static void quickSort(Asset[] arr, int low, int high) {
-        if (high - low < 10) {
-            insertionSort(arr, low, high); // hybrid optimization
-            return;
+        // Step 3: find last occurrence (right scan)
+        i = res.foundIndex;
+        while (i < logs.length && logs[i].equals(target)) {
+            res.comparisons++;
+            i++;
         }
+        res.lastIndex = i - 1;
 
-        if (low < high) {
-            int pivotIndex = medianOfThree(arr, low, high);
-            swap(arr, pivotIndex, high);
+        res.count = res.lastIndex - res.firstIndex + 1;
 
-            int pi = partition(arr, low, high);
-
-            quickSort(arr, low, pi - 1);
-            quickSort(arr, pi + 1, high);
-        }
+        return res;
     }
 
-    // 🔹 Partition logic
-    private static int partition(Asset[] arr, int low, int high) {
-        Asset pivot = arr[high];
-        int i = low - 1;
-
-        for (int j = low; j < high; j++) {
-            if (compare(arr[j], pivot)) {
-                i++;
-                swap(arr, i, j);
-            }
-        }
-
-        swap(arr, i + 1, high);
-        return i + 1;
-    }
-
-    // 🔹 Comparison for DESC returnRate + ASC volatility
-    private static boolean compare(Asset a, Asset b) {
-        if (a.returnRate > b.returnRate) return true;
-        if (a.returnRate == b.returnRate) {
-            return a.volatility < b.volatility;
-        }
-        return false;
-    }
-
-    // 🔹 Median-of-3 pivot selection
-    private static int medianOfThree(Asset[] arr, int low, int high) {
-        int mid = (low + high) / 2;
-
-        if (arr[low].returnRate > arr[mid].returnRate) swap(arr, low, mid);
-        if (arr[low].returnRate > arr[high].returnRate) swap(arr, low, high);
-        if (arr[mid].returnRate > arr[high].returnRate) swap(arr, mid, high);
-
-        return mid;
-    }
-
-    // 🔹 Insertion Sort (for small partitions)
-    private static void insertionSort(Asset[] arr, int low, int high) {
-        for (int i = low + 1; i <= high; i++) {
-            Asset key = arr[i];
-            int j = i - 1;
-
-            while (j >= low && !compare(arr[j], key)) {
-                arr[j + 1] = arr[j];
-                j--;
-            }
-            arr[j + 1] = key;
-        }
-    }
-
-    private static void swap(Asset[] arr, int i, int j) {
-        Asset temp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = temp;
-    }
-
-    // 🧪 Main
+    // ---------- MAIN ----------
     public static void main(String[] args) {
 
-        Asset[] assets = {
-                new Asset("AAPL", 12, 5),
-                new Asset("TSLA", 8, 9),
-                new Asset("GOOG", 15, 4)
-        };
+        String[] logs = {"accB", "accA", "accB", "accC"};
 
-        // 🔵 Merge Sort (Ascending)
-        mergeSort(assets, 0, assets.length - 1);
+        String target = "accB";
 
-        System.out.println("Merge Sort (Ascending):");
-        for (Asset a : assets) {
-            System.out.println(a);
-        }
+        // ---- Linear Search ----
+        Result linear = linearSearch(logs, target);
+        System.out.println("LINEAR SEARCH:");
+        System.out.println("First Index: " + linear.firstIndex);
+        System.out.println("Last Index: " + linear.lastIndex);
+        System.out.println("Comparisons: " + linear.comparisons);
+        System.out.println();
 
-        // 🟢 Quick Sort (Descending)
-        quickSort(assets, 0, assets.length - 1);
+        // ---- Binary Search (requires sorted input) ----
+        Arrays.sort(logs);
 
-        System.out.println("\nQuick Sort (Descending):");
-        for (Asset a : assets) {
-            System.out.println(a);
-        }
+        Result binary = binarySearch(logs, target);
+        System.out.println("BINARY SEARCH:");
+        System.out.println("First Index: " + binary.firstIndex);
+        System.out.println("Last Index: " + binary.lastIndex);
+        System.out.println("Count: " + binary.count);
+        System.out.println("Comparisons: " + binary.comparisons);
     }
 }
